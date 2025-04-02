@@ -17,7 +17,7 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
 - **Sampling density**: you can easily tweak the sampling density (conversion quality) in the settings via a slider.
 - **Texture map support**: For now, Mesh2Splat supports the following texture maps:
     - Diffuse
-    - MetallicRoughness
+    - Metallic-Roughness
     - Normal
 - **Enhanced Performance**: Significantly reduce the time needed to transform a 3D mesh into a 3DGS.
 - **Relightability**: Can easily relight the gaussians given a renderer that supports it.
@@ -25,12 +25,15 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
     <img src="./res/conversion.gif" width="850px">
 </div>
 
+**3D model by**: M. Pavlovic, “Sci-fi helmet model,” 2024, provided by Quixel. License: CC Attribution Share Alike 3.0. (https://creativecommons.org/licenses/by-sa/3.0/.)
+
 ### 3DGS Renderer
 
 - **Visualization options**: albedo, normals, depth, geometry, overdraw and pbr properties.
 - **Gaussian shading**: supports PBR based shading.
 - **Lighting and shadows**: simple point light and omnidirectional shadow mapping.
 - **Shader hot-reload**: if you want to experiment with the shaders and 3DGS math, hot-reload is there to make your life easier.
+- **Mesh-Gaussian occlusion**: to improve performance you can use the "Enable mesh-gaussian depth test" to use the mesh as occluder in depth prepass.
 
 <div align="center">
     <img src="./res/pbrShading.gif" width="850px">
@@ -45,16 +48,16 @@ $`{\Sigma_{2D}} = \begin{bmatrix} \sigma^{2}_x & 0 \\\ 0 & \sigma^{2}_y \end{bma
     - Compute Jacobian matrix from *normalized UV space* to *3D space* for each triangle:  $`J = V \cdot (UV)^{-1} `$.
     - Apply triplanar orthogonal projection onto X,Y or Z face based on normal similarity and normalize in [-1, 1].
     - Derive the 3D directions corresponding to texture axes $`u`$ and $`v`$, and calculate the magnitudes of the 3D derivative vectors.
-    - Multiply the found lengths for by the 2D Gaussian´s standard deviation and we found our scaling factors along the directions aligned with the surface in 3D space.
+    - Multiply the found lengths by the 2D Gaussian´s standard deviation, this way we found the scaling factors along the directions aligned with the surface in 3D space.
     - The packed scale values will be: 
         - $`packedScale_x = log(length(Ju) * sigma_x)`$
         - $`packedScale_y = log(length(Jv) * sigma_y)`$
         - $`packedScale_z = log(1e-7)`$
     
 
-- Now that we have the **Scale** and **Rotation** for a *3D Gaussian* part of a specific triangle, emit one 3D Gaussian for each vertex of this triangle, setting their respective 3D position to the 3D position of the vertex, and in order to exploit while setting ```gl_Position = vec4(gs_in[i].normalizedUv * 2.0 - 1.0, 0.0, 1.0);```. This means that the rasterizer will interpolate these values and generate one 3D Gaussian per fragment in the orthogonal space.
-- Do texture fetches and set this data per gaussian in Fragment Shader. 
-- The `.ply` file format was modified in order to account for roughness and metallic properties
+- Now that we have the **Scale** and **Rotation** for a *3D Gaussian* part of a specific triangle, emit one 3D Gaussian for each vertex of this triangle, setting their respective 3D position to the 3D position of the vertex, and in order to exploit the hardware interpolator, we set ```gl_Position = vec4(gs_in[i].normalizedUv * 2.0 - 1.0, 0.0, 1.0);```. This means that the rasterizer will interpolate these values and generate one 3D Gaussian per fragment in the orthogonal space.
+- Perform texture fetches and set this data per gaussian in Fragment Shader. 
+- Each fragment now atomically appends one gaussian into a shared [SSBO](https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object). 
 
 ## Performance
 Mesh2Splat is able to convert a 3D mesh into a 3DGS on average in **<0.5ms**.
