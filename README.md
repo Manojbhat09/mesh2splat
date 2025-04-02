@@ -57,6 +57,7 @@ $`{\Sigma_{2D}} = \begin{bmatrix} \sigma^{2}_x & 0 \\\ 0 & \sigma^{2}_y \end{bma
 
 - Now that we have the **Scale** and **Rotation** for a *3D Gaussian* part of a specific triangle, emit one 3D Gaussian for each vertex of this triangle, setting their respective 3D position to the 3D position of the vertex, and in order to exploit the hardware interpolator, we set ```gl_Position = vec4(gs_in[i].normalizedUv * 2.0 - 1.0, 0.0, 1.0);```. This means that the rasterizer will interpolate these values and generate one 3D Gaussian per fragment in the orthogonal space.
 - Perform texture fetches and set this data per gaussian in Fragment Shader. 
+- Each fragment now atomically appends one gaussian into a shared [(SSBO)](https://www.khronos.org/opengl/wiki/Shader_Storage_Buffer_Object). 
 
 ## Performance
 Mesh2Splat is able to convert a 3D mesh into a 3DGS on average in **<0.5ms**.
