@@ -25,7 +25,7 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
     <img src="./res/conversion.gif" width="850px">
 </div>
 
-**3D model by**: M. Pavlovic, “Sci-fi helmet model,” 2024, provided by Quixel. License: CC Attribution Share Alike 3.0. (https://creativecommons.org/licenses/by-sa/3.0/.) [Online]. Available: https://quixel.se/usermanual/quixelsuite/doku.php?id=ddo_samples
+**3D model by**: M. Pavlovic, “Sci-fi helmet model,” 2024, provided by Quixel. License: CC Attribution Share Alike 3.0. (https://creativecommons.org/licenses/by-sa/3.0/.)
 
 ### 3DGS Renderer
 
