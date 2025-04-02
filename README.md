@@ -17,7 +17,7 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
 - **Sampling density**: you can easily tweak the sampling density (conversion quality) in the settings via a slider.
 - **Texture map support**: For now, Mesh2Splat supports the following texture maps:
     - Diffuse
-    - MetallicRoughness
+    - Metallic-Roughness
     - Normal
 - **Enhanced Performance**: Significantly reduce the time needed to transform a 3D mesh into a 3DGS.
 - **Relightability**: Can easily relight the gaussians given a renderer that supports it.
