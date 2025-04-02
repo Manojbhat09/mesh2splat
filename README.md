@@ -31,6 +31,7 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
 - **Gaussian shading**: supports PBR based shading.
 - **Lighting and shadows**: simple point light and omnidirectional shadow mapping.
 - **Shader hot-reload**: if you want to experiment with the shaders and 3DGS math, hot-reload is there to make your life easier.
+- **Mesh-Gaussian occlusion**: to improve performance you can use the "Enable mesh-gaussian depth test" to use the mesh as occluder in depth prepass.
 
 <div align="center">
     <img src="./res/pbrShading.gif" width="850px">
