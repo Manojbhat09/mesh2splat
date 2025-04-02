@@ -93,6 +93,18 @@ To build **Mesh2Splat**, follow the following steps:
 ## Limitations
 - Volumetric Data such as foliage, grass, hair, clouds, etc. has not being targeted and will probably not be converted correctly if using primitives different from triangles.<br>
 
+## How to Cite
+To cite this repository, click the **“Cite this repository”** button at the top of the GitHub page.  
+Alternatively, you can use the following BibTeX entry:
+```bibtex 
+@misc{
+scolari2025mesh2splat,
+author = {Scolari, Stefano},
+title = {Mesh2Splat: Fast mesh to 3D Gaussian splat conversion},
+year = {2025}, howpublished = {\url{https://github.com/electronicarts/mesh2splat}},
+note = {Extended and updated version of the author's Master's thesis at KTH.} }
+```
+
 # Authors
 
 <div align="center">
