@@ -102,7 +102,19 @@ scolari2025mesh2splat,
 author = {Scolari, Stefano},
 title = {Mesh2Splat: Fast mesh to 3D Gaussian splat conversion},
 year = {2025}, howpublished = {\url{https://github.com/electronicarts/mesh2splat}},
-note = {Extended and updated version of the author's Master's thesis at KTH.} }
+note = {Extended and updated version of the author's Master's thesis at KTH.} 
+}
+```
+This work builds upon the authors Master Thesis work:
+```bibtex 
+@mastersthesis{
+scolari2024thesis,
+author = {Scolari, Stefano},
+title = {Mesh2Splat: Gaussian Splatting from 3D Geometry and Materials},
+school = {KTH Royal Institute of Technology},
+year = {2024},
+url = {https://urn.kb.se/resolve?urn=urn:nbn:se:kth:diva-359582}
+}
 ```
 
 # Authors
