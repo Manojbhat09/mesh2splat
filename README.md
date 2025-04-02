@@ -73,10 +73,10 @@ Mesh2Splat is able to convert a 3D mesh into a 3DGS on average in **<0.5ms**.
   Some 3DGS renderers do not support hybrid rendering (i.e., mixing triangle meshes and Gaussians). In these cases, Mesh2Splat enables direct conversion of mesh assets into pure 3DGS format, allowing them to be rendered natively without relying on slower optimization pipelines.
 
 - **Fast Initialization for 3DGS Optimization**  
-  When preparing a model for a 3DGS optimization pipeline (e.g., with new sets of images or altered appearance), having a good initial guess is crucial for faster convergence and better results. Mesh2Splat provides a geometry- and texture-informed initialization that can be used as a strong starting point for further refinement.
+  When preparing a model for a 3DGS optimization pipeline (e.g., with new sets of images or altered appearance), having a good initial guess is crucial for faster convergence and better results. Mesh2Splat provides a geometry and texture informed initialization that can be used as a strong starting point for further refinement.
 
 - **Enhancing Traditional Renderers with Gaussian Primitives**  
-  In pipelines where triangle meshes are the primary representation but 3DGS rendering is supported, Mesh2Splat can be used to convert selected assets into Gaussians. This enables developers and artists to leverage the unique properties of Gaussians—such as smooth LOD transitions, soft silhouettes, and alpha compositing—within more traditional rendering contexts.
+  In pipelines where triangle meshes are the primary representation but 3DGS rendering is supported, Mesh2Splat can be used to convert selected assets into Gaussians. This enables developers and artists to leverage the unique properties of Gaussians.
 
 
 ## Build Instructions (Windows)
