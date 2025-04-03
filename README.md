@@ -29,7 +29,7 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
 ## Features
 ### Converter
 
-- **Direct 3D Model Processing**: Directly obtain a 3DGS model from a 3D mesh.
+- **Direct 3D Model Processing**: Directly obtain a 3DGS model from a 3D mesh (only `.glb` format is supported for now).
 - **Sampling density**: you can easily tweak the sampling density (conversion quality) in the settings via a slider.
 - **Texture map support**: For now, Mesh2Splat supports the following texture maps:
     - Diffuse
