@@ -237,8 +237,15 @@ bool SceneManager::parseGltfFile(const std::string& filePath, const std::string&
 
             // Extract vertex data, I assume the glb mesh to always have position and normal data
             auto vertices       = getBufferData<glm::vec3>(model, primitive.attributes.at("POSITION"));
-            auto normals        = getBufferData<glm::vec3>(model, primitive.attributes.at("NORMAL"));
             
+            const glm::vec3* normals = nullptr;
+            bool hasNormals = false;
+            if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end())
+            {
+                normals = getBufferData<glm::vec3>(model, primitive.attributes.at("NORMAL"));
+                hasNormals = true;
+            }
+
             const glm::vec2* uvs = nullptr;
             bool hasUvs = false;
             if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end())
@@ -289,7 +296,8 @@ bool SceneManager::parseGltfFile(const std::string& filePath, const std::string&
                 {
                     dst->pos[e] = vertices[index[e]];
                     if(hasUvs) dst->uv[e] = uvs[index[e]];
-                    dst->normal[e] = normals[index[e]]; 
+                    if(hasNormals) dst->normal[e] = normals[index[e]];
+                     
                 }
             }
             meshes.push_back(myMesh);

@@ -3,17 +3,33 @@
     <img src="./res/mesh2splatPipelineFinal.jpg" width="750px">
 </div>
 
-**Mesh2Splat** is a fast surface splatting approach used to convert convert 3D meshes into 3DGS [(3D Gaussian Splatting)](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/) models by exploiting the rasterizer's interpolator. Mesh2Splat comes with a 3DGS renderer to view the conversion results.<p>
+**Mesh2Splat** is a fast surface splatting approach used to convert 3D meshes into 3DGS [(3D Gaussian Splatting)](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/) models by exploiting the rasterizer's interpolator. Mesh2Splat comes with a 3DGS renderer to view the conversion results.<p>
 
-**What if we wanted to represent a synthetic object (3D model) in 3DGS format?**<br>
-Currently, the only way to do so is to generate a synthetic dataset (camera poses, image renders and initial sparse point cloud) of the 3D model, and then feed this into the 3DGS pipeline. This process can take several minutes, depending on the specific 3DGS pipeline and model used.<br>
+> "**What if we wanted to represent a synthetic object (3D model) in 3DGS format?**"
+
+Currently, the only way to do so is to generate a synthetic dataset (camera poses, image renders and initial sparse point cloud) of the 3D model, and then feed this into the 3DGS pipeline. This process can take several minutes, depending on the specific 3DGS pipeline and model used.
+<br>
 
 **Mesh2Splat** instead, by directly using the geometry, materials and texture information from the 3D model, rather than going through the classical 3DGS pipeline, is able to obtain a 3DGS representation of the input 3D models in milliseconds.<br>
+
+## Use Cases
+
+**Mesh2Splat** is built for fast and flexible integration into 3D Gaussian Splatting (3DGS) workflows, especially when traditional pipelines may be too slow or incompatible with certain scenarios. Below are some key use cases:
+
+- **3DGS-only Rendering Pipelines**  
+  Some 3DGS renderers do not support hybrid rendering (i.e., mixing triangle meshes and Gaussians). In these cases, Mesh2Splat enables direct conversion of mesh assets into pure 3DGS format, allowing them to be rendered natively without relying on slower optimization pipelines.
+
+- **Fast Initialization for 3DGS Optimization**  
+  When preparing a model for a 3DGS optimization pipeline (e.g., with new sets of images or altered appearance), having a good initial guess is crucial for faster convergence and better results. Mesh2Splat provides a geometry and texture informed initialization that can be used as a strong starting point for further refinement.
+
+- **Enhancing Traditional Renderers with Gaussian Primitives**  
+  In pipelines where triangle meshes are the primary representation but 3DGS rendering is supported, Mesh2Splat can be used to convert selected assets into Gaussians. This enables developers and artists to leverage the unique properties of Gaussians.
+
 
 ## Features
 ### Converter
 
-- **Direct 3D Model Processing**: Directly obtain a 3DGS model from a 3D mesh.
+- **Direct 3D Model Processing**: Directly obtain a 3DGS model from a 3D mesh (only `.glb` format is supported for now).
 - **Sampling density**: you can easily tweak the sampling density (conversion quality) in the settings via a slider.
 - **Texture map support**: For now, Mesh2Splat supports the following texture maps:
     - Diffuse
@@ -25,7 +41,7 @@ Currently, the only way to do so is to generate a synthetic dataset (camera pose
     <img src="./res/conversion.gif" width="850px">
 </div>
 
-**3D model by**: M. Pavlovic, “Sci-fi helmet model,” 2024, provided by Quixel. License: CC Attribution Share Alike 3.0. (https://creativecommons.org/licenses/by-sa/3.0/.)
+**3D model by**: M. Pavlovic, “Sci-fi helmet model,” 2024, provided by Quixel. License: CC Attribution Share Alike 3.0. (https://creativecommons.org/licenses/by-sa/3.0/.), you can download it from [here](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/SciFiHelmet/glTF)
 
 ### 3DGS Renderer
 
@@ -63,6 +79,8 @@ $`{\Sigma_{2D}} = \begin{bmatrix} \sigma^{2}_x & 0 \\\ 0 & \sigma^{2}_y \end{bma
 Mesh2Splat is able to convert a 3D mesh into a 3DGS on average in **<0.5ms**.
 <br>
 
+
+
 ## Build Instructions (Windows)
 
 To build **Mesh2Splat**, follow the following steps:
@@ -85,6 +103,8 @@ To build **Mesh2Splat**, follow the following steps:
 2. Run one of the provided batch scripts:
    - `run_build_debug.bat`
    - `run_build_release.bat`
+3. Open the `bin` folder and run the executable or open the `build` folder and open the `.sln` file
+     
 <br>
 
    > **Tip**: Use the release build if you only need the final executable in optimized (Release) mode.
@@ -92,6 +112,30 @@ To build **Mesh2Splat**, follow the following steps:
 
 ## Limitations
 - Volumetric Data such as foliage, grass, hair, clouds, etc. has not being targeted and will probably not be converted correctly if using primitives different from triangles.<br>
+
+## How to Cite
+To cite this repository, click the **“Cite this repository”** button at the top of the GitHub page.  
+Alternatively, you can use the following BibTeX entry:
+```bibtex 
+@misc{
+scolari2025mesh2splat,
+author = {Scolari, Stefano},
+title = {Mesh2Splat: Fast mesh to 3D Gaussian splat conversion},
+year = {2025}, howpublished = {\url{https://github.com/electronicarts/mesh2splat}},
+note = {Extended and updated version of the author's Master's thesis at KTH.} 
+}
+```
+This work builds upon the authors Master Thesis work:
+```bibtex 
+@mastersthesis{
+scolari2024thesis,
+author = {Scolari, Stefano},
+title = {Mesh2Splat: Gaussian Splatting from 3D Geometry and Materials},
+school = {KTH Royal Institute of Technology},
+year = {2024},
+url = {https://urn.kb.se/resolve?urn=urn:nbn:se:kth:diva-359582}
+}
+```
 
 # Authors
 
