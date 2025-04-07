@@ -44,7 +44,7 @@ namespace utils
 
     glm::vec3 getShFromColor(glm::vec3 color)
     {
-        glm::vec3 sh = color - glm::vec3(0.5f) / SH_COEFF0;
+        glm::vec3 sh = (color - glm::vec3(0.5f)) / SH_COEFF0;
         return glm::vec3(sh.x, sh.y, sh.z);
     }
 
