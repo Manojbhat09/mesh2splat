@@ -60,9 +60,9 @@ The (current) core concept behind **Mesh2Splat** is rather simple:
 - Compute 3D model bounding box
 - Initialize a 2D covariance matrix for our 2D Gaussians as: <br>
 $`{\Sigma_{2D}} = \begin{bmatrix} \sigma^{2}_x & 0 \\\ 0 & \sigma^{2}_y \end{bmatrix}`$ <br><br> where: $`{\sigma_{x}}\sim {\sigma_{y}}\sim 0.65`$ <br>and $`{\rho} = 0`$
-- Then, for each triangle primitive in the Geometry Shader stage, we do the following:-
-    - Compute Jacobian matrix from *normalized UV space* to *3D space* for each triangle:  $`J = V \cdot (UV)^{-1} `$.
+- Then, for each triangle primitive in the Geometry Shader stage, we do the following:
     - Apply triplanar orthogonal projection onto X,Y or Z face based on normal similarity and normalize in [-1, 1].
+    - Compute Jacobian matrix from *orthogonal UV space* to *3D space* for each triangle:  $`J = V \cdot (UV)^{-1} `$.
     - Derive the 3D directions corresponding to texture axes $`u`$ and $`v`$, and calculate the magnitudes of the 3D derivative vectors.
     - Multiply the found lengths by the 2D Gaussian´s standard deviation, this way we found the scaling factors along the directions aligned with the surface in 3D space.
     - The packed scale values will be: 
