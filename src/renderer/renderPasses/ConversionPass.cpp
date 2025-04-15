@@ -73,8 +73,6 @@ void ConversionPass::conversion(
         if (textureMap.find(BASE_COLOR_TEXTURE) != textureMap.end())
         {
             glUtils::setTexture2D(converterProgramID, "albedoTexture", textureMap.at(BASE_COLOR_TEXTURE).glTextureID, 0);
-
-            glUtils::setTexture2D(converterProgramID, "albedoTexture", textureMap.at(BASE_COLOR_TEXTURE).glTextureID, 0);
             glUtils::setUniform1i(converterProgramID, "hasAlbedoMap", 1);
         }
         if (textureMap.find(NORMAL_TEXTURE) != textureMap.end())

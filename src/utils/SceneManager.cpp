@@ -271,34 +271,52 @@ bool SceneManager::parseGltfFile(const std::string& filePath, const std::string&
 
                 size_t index[3] = { indices[i], indices[i + 1], indices[i + 2] };
 
+                for (int e = 0; e < 3; e++)
+                {
+                    dst->pos[e] = vertices[index[e]];
+                    if (hasUvs) dst->uv[e] = uvs[index[e]];
+                    if (hasNormals) dst->normal[e] = normals[index[e]];
+
+                }
+
                 if (hasTangents)
                 {
                     for (int e = 0; e < 3; e++) {
                         dst->tangent[e] = tangents[index[e]];
                     }
                 } else {
-                    //TODO: HMMMMMMM
-                    //but tbh just reimport it in Blender and export the damn tangents (there is a checkbox on the right of the exporter window under "data->mesh->Tangents")
-                    glm::vec3 dv1 = dst->pos[1] - dst->pos[0];
-                    glm::vec3 dv2 = dst->pos[2] - dst->pos[0];
-
+                    //TODO: Should use Mikktspace algorithm http://www.mikktspace.com/
+                    //but tbh just reimport it in Blender and export the tangents (there is a checkbox on the right of the exporter window under "data->mesh->Tangents")
+                    glm::vec3 dp1 = dst->pos[1] - dst->pos[0];
+                    glm::vec3 dp2 = dst->pos[2] - dst->pos[0];
                     glm::vec2 duv1 = dst->uv[1] - dst->uv[0];
                     glm::vec2 duv2 = dst->uv[2] - dst->uv[0];
 
-                    float r = 1.0f / (duv1.x * duv2.y - duv1.y * duv2.x);
-                    glm::vec4 tangent = glm::vec4((dv1 * duv2.y - dv2 * duv1.y) * r, 1.0f);
-                    dst->tangent[0] = tangent;
-                    dst->tangent[1] = tangent;
-                    dst->tangent[2] = tangent;
+                    float det = duv1.x * duv2.y - duv1.y * duv2.x;
+                    if (fabs(det) < 1e-8f)
+                        det = 1.0f; // divide-by-zero
+
+                    float invDet = 1.0f / det;
+
+                    glm::vec3 tangent = (dp1 * duv2.y - dp2 * duv1.y) * invDet;
+                    glm::vec3 bitangent = (dp2 * duv1.x - dp1 * duv2.x) * invDet;
+
+                    tangent = glm::normalize(tangent);
+                    bitangent = glm::normalize(bitangent);
+
+                    glm::vec3 normal = glm::normalize(glm::cross(dp1, dp2));
+
+                    float handedness = (glm::dot(glm::cross(normal, tangent), bitangent) < 0.0f) ? -1.0f : 1.0f;
+
+                    glm::vec4 finalTangent = glm::vec4(tangent, handedness);
+
+                    // set to all three verts (still naive)
+                    dst->tangent[0] = finalTangent;
+                    dst->tangent[1] = finalTangent;
+                    dst->tangent[2] = finalTangent;
                 }
 
-                for (int e = 0; e < 3; e++)
-                {
-                    dst->pos[e] = vertices[index[e]];
-                    if(hasUvs) dst->uv[e] = uvs[index[e]];
-                    if(hasNormals) dst->normal[e] = normals[index[e]];
-                     
-                }
+
             }
             meshes.push_back(myMesh);
         }

@@ -79,7 +79,6 @@ struct RenderContext {
     GLuint drawIndirectBuffer;
     GLuint atomicCounterBuffer;
     GLuint atomicCounterBufferConversionPass;
-
     GLint numberOfGaussians;
 
     // Data Structures

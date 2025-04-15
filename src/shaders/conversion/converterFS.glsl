@@ -58,6 +58,7 @@ void main() {
     //NORMAL MAP
     //Should compute the TBN in geometry shader
     vec3 out_Normal;
+
     if (hasNormalMap == 1)
     {
         vec3 normalMap_normal = texture(normalTexture, UV).xyz;
@@ -67,10 +68,14 @@ void main() {
         mat3 TBN = mat3(Tangent.xyz, bitangent, normalize(Normal));
 
         out_Normal = normalize(TBN * retrievedNormal); //in model space
+
     }
     else {
         out_Normal = Normal;
     }
+
+    
+
 
     //METALLIC-ROUGHNESS MAP
     vec2 metallicRoughness;
