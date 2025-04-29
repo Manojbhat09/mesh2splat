@@ -432,7 +432,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
         //TODO: I am open to a better solution
         if constexpr (std::is_same_v<T, float>) {
@@ -463,7 +463,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform1f(uniformLocation, uniformValue);
@@ -475,7 +475,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform1i(uniformLocation, uniformValue);
@@ -487,7 +487,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform1ui(uniformLocation, uniformValue);
@@ -498,7 +498,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform1uiv(uniformLocation, count, &uniformValue[0]);
@@ -509,7 +509,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform3f(uniformLocation, uniformValue[0], uniformValue[1], uniformValue[2]);
@@ -520,7 +520,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform4f(uniformLocation, uniformValue[0], uniformValue[1], uniformValue[2], uniformValue[3]);
@@ -531,7 +531,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform2f(uniformLocation, uniformValue[0], uniformValue[1]);
@@ -542,7 +542,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniform2i(uniformLocation, uniformValue[0], uniformValue[1]);
@@ -554,7 +554,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniformMatrix4fv(uniformLocation, 1, GL_FALSE, &matrix[0][0]);
@@ -566,7 +566,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, uniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + uniformName + "'." << std::endl;
         }
 
         glUniformMatrix4fv(uniformLocation, count, GL_FALSE, glm::value_ptr(matrices[0]));
@@ -577,7 +577,7 @@ namespace glUtils
         GLint uniformLocation = glGetUniformLocation(shaderProgram, textureUniformName.c_str());
 
         if (uniformLocation == -1) {
-            std::cerr << "Could not find uniform: '" + textureUniformName + "'." << std::endl;
+            // std::cerr << "Could not find uniform: '" + textureUniformName + "'." << std::endl;
         }
         glActiveTexture(GL_TEXTURE0 + textureUnitNumber);
         glBindTexture(GL_TEXTURE_2D, texture);

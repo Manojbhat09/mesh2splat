@@ -4,6 +4,72 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "renderer.hpp"
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
+static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
+    const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2,
+    int m /* sampling density */)
+{
+    std::vector<utils::GaussianDataSSBO> out;
+    if (m <= 0) return out; // Avoid division by zero and unnecessary work
+
+    out.reserve((m + 1) * (m + 2) / 2);
+
+    glm::vec3 e1 = p1 - p0;
+    glm::vec3 e2 = p2 - p0;
+    glm::vec3 n = glm::normalize(glm::cross(e1, e2));
+
+    // Check for degenerate triangles
+    if (glm::length(n) < 1e-6f) {
+        return out; // Skip degenerate triangles
+    }
+
+    // Orthonormal basis X,Y,Z (Z = normal)
+    glm::vec3 X = glm::normalize(e1);
+    // Handle potential collinearity of e1 and e2 leading to zero cross product
+    glm::vec3 Y_candidate = glm::cross(n, X);
+    if (glm::length(Y_candidate) < 1e-6f) {
+         // If n and X are parallel (e.g., e1 is zero length), create an arbitrary orthogonal vector
+        glm::vec3 arbitrary_non_parallel = (abs(n.x) < 0.9f) ? glm::vec3(1,0,0) : glm::vec3(0,1,0);
+        Y_candidate = glm::normalize(glm::cross(n, arbitrary_non_parallel));
+        X = glm::normalize(glm::cross(Y_candidate, n)); // Recompute X to ensure orthogonality
+    }
+     glm::vec3 Y = glm::normalize(Y_candidate);
+
+
+    glm::mat3 basis(X, Y, n);
+    glm::quat Q = glm::quat_cast(basis);
+
+    float su = glm::length(e1) / float(m);
+    // Perpendicular component of e2 w.r.t X for isotropy in tangent plane
+    glm::vec3 e2_perp = e2 - glm::dot(e2, X) * X;
+    float sv = glm::length(e2_perp) / float(m);
+    glm::vec3 S(su > 1e-6f ? su : 1e-6f, sv > 1e-6f ? sv : 1e-6f, 1e-6f); // Use a small epsilon for scale, avoid zero
+
+    for (int u = 0; u <= m; ++u)
+    {
+        for (int v = 0; v <= m - u; ++v)
+        {
+            float fu = float(u) / m;
+            float fv = float(v) / m;
+            float fw = 1.0f - fu - fv;
+
+            glm::vec3 P = fw * p0 + fu * p1 + fv * p2;
+
+            utils::GaussianDataSSBO g;
+            g.position = glm::vec4(P, 1.0f);
+            g.scale = glm::vec4(S, 0.0f); // Store scale, w component unused for now
+            g.normal = glm::vec4(n, 0.0f); // Store normal, w component unused
+            g.rotation = glm::vec4(Q.w, Q.x, Q.y, Q.z); // Store quaternion (w, x, y, z)
+            g.color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f); // Default gray color, alpha 1
+            g.pbr = glm::vec4(0.0f, 0.5f, 0.0f, 0.0f); // Default PBR: metallic=0, roughness=0.5
+
+            out.push_back(g);
+        }
+    }
+    return out;
+}
 
 //TODO: create a separete camera class, avoid it bloating and getting too messy
 
@@ -463,4 +529,47 @@ unsigned int Renderer::getTotalGaussianCount()
 {
     return this->renderContext.numberOfGaussians;
 
+}
+
+void Renderer::convertMeshToGaussiansCPU(int samplingDensity)
+{
+    std::cout << "Starting CPU Mesh to Gaussian Conversion..." << std::endl;
+    renderContext.readGaussians.clear();
+
+    for (const auto& meshPair : renderContext.dataMeshAndGlMesh)
+    {
+        const utils::Mesh& mesh = meshPair.first;
+
+        if (mesh.faces.empty()) {
+            std::cerr << "Warning: Skipping mesh with no faces." << std::endl;
+            continue;
+        }
+
+        // Iterate through each face (triangle) in the mesh
+        for (const auto& face : mesh.faces)
+        {
+            // Extract the three vertex positions for the current face
+            const glm::vec3& p0 = face.pos[0];
+            const glm::vec3& p1 = face.pos[1];
+            const glm::vec3& p2 = face.pos[2];
+
+            // Generate Gaussians for this triangle
+            std::vector<utils::GaussianDataSSBO> triangleGaussians = sampleTriangleCPU_Internal(p0, p1, p2, samplingDensity);
+
+            // Add the generated Gaussians to the main list
+            renderContext.readGaussians.insert(renderContext.readGaussians.end(), triangleGaussians.begin(), triangleGaussians.end());
+        }
+    }
+
+    std::cout << "CPU Conversion finished. Generated " << renderContext.readGaussians.size() << " gaussians." << std::endl;
+
+    // Update the GPU buffer with the new CPU-generated data
+    updateGaussianBuffer();
+
+    // Optionally, trigger necessary render passes if needed immediately after conversion
+    // enableRenderPass(gaussiansPrePassName);
+    // enableRenderPass(radixSortPassName);
+    // enableRenderPass(gaussianSplattingPassName);
+    // enableRenderPass(gaussianSplattingRelightingPassName);
+    // resetRendererViewportResolution();
 }
