@@ -9,7 +9,7 @@
 
 static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
     const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2,
-    int m /* sampling density */)
+    int m /* sampling density */, float scaleFactor /* New parameter */) // Add scaleFactor
 {
     std::vector<utils::GaussianDataSSBO> out;
     if (m <= 0) return out; // Avoid division by zero and unnecessary work
@@ -41,11 +41,19 @@ static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
     glm::mat3 basis(X, Y, n);
     glm::quat Q = glm::quat_cast(basis);
 
-    float su = glm::length(e1) / float(m);
+    // Apply scaleFactor here
+    float su = (glm::length(e1) / float(m)) * scaleFactor;
     // Perpendicular component of e2 w.r.t X for isotropy in tangent plane
     glm::vec3 e2_perp = e2 - glm::dot(e2, X) * X;
-    float sv = glm::length(e2_perp) / float(m);
-    glm::vec3 S(su > 1e-6f ? su : 1e-6f, sv > 1e-6f ? sv : 1e-6f, 1e-6f); // Use a small epsilon for scale, avoid zero
+    float sv = (glm::length(e2_perp) / float(m)) * scaleFactor;
+
+    // --- Make Gaussians isotropic (circular) ---
+    float avg_scale = (su + sv) * 0.5f; // Calculate average scale
+    // Use a small epsilon for scale, avoid zero or negative scales
+    // Use avg_scale for both X and Y components
+    glm::vec3 S(avg_scale > 1e-7f ? avg_scale : 1e-7f,
+                avg_scale > 1e-7f ? avg_scale : 1e-7f,
+                1e-7f); // Keep Z scale minimal
 
     for (int u = 0; u <= m; ++u)
     {
@@ -59,11 +67,11 @@ static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
 
             utils::GaussianDataSSBO g;
             g.position = glm::vec4(P, 1.0f);
-            g.scale = glm::vec4(S, 0.0f); // Store scale, w component unused for now
-            g.normal = glm::vec4(n, 0.0f); // Store normal, w component unused
-            g.rotation = glm::vec4(Q.w, Q.x, Q.y, Q.z); // Store quaternion (w, x, y, z)
-            g.color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f); // Default gray color, alpha 1
-            g.pbr = glm::vec4(0.0f, 0.5f, 0.0f, 0.0f); // Default PBR: metallic=0, roughness=0.5
+            g.scale = glm::vec4(S, 0.0f); // Use pre-calculated scale S
+            g.normal = glm::vec4(n, 0.0f);
+            g.rotation = glm::vec4(Q.w, Q.x, Q.y, Q.z);
+            g.color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f);
+            g.pbr = glm::vec4(0.0f, 0.5f, 0.0f, 0.0f);
 
             out.push_back(g);
         }
@@ -300,6 +308,7 @@ void Renderer::enableRenderPass(std::string renderPassName)
 
 void Renderer::setViewportResolutionForConversion(int resolutionTarget)
 {
+    std::cout<<"Resolution target: " << int(resolutionTarget / renderContext.dataMeshAndGlMesh.size()) << std::endl;
     renderContext.resolutionTarget = int(resolutionTarget / renderContext.dataMeshAndGlMesh.size());
 }
 
@@ -531,7 +540,7 @@ unsigned int Renderer::getTotalGaussianCount()
 
 }
 
-void Renderer::convertMeshToGaussiansCPU(int samplingDensity)
+void Renderer::convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor) // Add scaleFactor
 {
     std::cout << "Starting CPU Mesh to Gaussian Conversion..." << std::endl;
     renderContext.readGaussians.clear();
@@ -553,8 +562,8 @@ void Renderer::convertMeshToGaussiansCPU(int samplingDensity)
             const glm::vec3& p1 = face.pos[1];
             const glm::vec3& p2 = face.pos[2];
 
-            // Generate Gaussians for this triangle
-            std::vector<utils::GaussianDataSSBO> triangleGaussians = sampleTriangleCPU_Internal(p0, p1, p2, samplingDensity);
+            // Generate Gaussians for this triangle, passing the scaleFactor
+            std::vector<utils::GaussianDataSSBO> triangleGaussians = sampleTriangleCPU_Internal(p0, p1, p2, samplingDensity, scaleFactor);
 
             // Add the generated Gaussians to the main list
             renderContext.readGaussians.insert(renderContext.readGaussians.end(), triangleGaussians.begin(), triangleGaussians.end());

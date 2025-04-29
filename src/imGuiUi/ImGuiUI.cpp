@@ -373,7 +373,10 @@ std::string ImGuiUI::getPlyFilePathParentFolder() const { return plyParentFolder
 unsigned int ImGuiUI::getFormatOption() const { return formatOptions[formatIndex]; };
 glm::vec4 ImGuiUI::getSceneBackgroundColor() const { return sceneBackgroundColor; };
 float ImGuiUI::getGaussianStd() const { return gaussian_std; };
-int ImGuiUI::getResolutionTarget() const { return static_cast<int>(minRes + quality * (maxRes - minRes)); };
+int ImGuiUI::getResolutionTarget() const { 
+    std::cout << "Resolution: " << static_cast<int>(minRes + quality * (maxRes - minRes)) << std::endl;
+    return static_cast<int>(minRes + quality * (maxRes - minRes)); 
+};
 
 //renderModeSelector
 ImGuiUI::VisualizationOption ImGuiUI::selectedRenderMode() const { return renderOptions[renderIndex]; };

@@ -56,7 +56,7 @@ public:
 	bool hasWindowSizeChanged();
 	bool isWindowMinimized();
 
-	void convertMeshToGaussiansCPU(int samplingDensity); // New method declaration
+	void convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor);
 
 
 private:
