@@ -9,10 +9,11 @@
 
 static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
     const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2,
-    int m /* sampling density */, float scaleFactor /* New parameter */) // Add scaleFactor
+    const utils::Face& face, // Add face parameter to access all vertex attributes
+    int m /* sampling density */, float scaleFactor /* New parameter */) 
 {
     std::vector<utils::GaussianDataSSBO> out;
-    if (m <= 0) return out; // Avoid division by zero and unnecessary work
+    if (m <= 0) return out;
 
     out.reserve((m + 1) * (m + 2) / 2);
 
@@ -22,38 +23,32 @@ static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
 
     // Check for degenerate triangles
     if (glm::length(n) < 1e-6f) {
-        return out; // Skip degenerate triangles
+        return out;
     }
 
     // Orthonormal basis X,Y,Z (Z = normal)
     glm::vec3 X = glm::normalize(e1);
-    // Handle potential collinearity of e1 and e2 leading to zero cross product
     glm::vec3 Y_candidate = glm::cross(n, X);
     if (glm::length(Y_candidate) < 1e-6f) {
-         // If n and X are parallel (e.g., e1 is zero length), create an arbitrary orthogonal vector
         glm::vec3 arbitrary_non_parallel = (abs(n.x) < 0.9f) ? glm::vec3(1,0,0) : glm::vec3(0,1,0);
         Y_candidate = glm::normalize(glm::cross(n, arbitrary_non_parallel));
-        X = glm::normalize(glm::cross(Y_candidate, n)); // Recompute X to ensure orthogonality
+        X = glm::normalize(glm::cross(Y_candidate, n));
     }
-     glm::vec3 Y = glm::normalize(Y_candidate);
-
+    glm::vec3 Y = glm::normalize(Y_candidate);
 
     glm::mat3 basis(X, Y, n);
     glm::quat Q = glm::quat_cast(basis);
 
     // Apply scaleFactor here
     float su = (glm::length(e1) / float(m)) * scaleFactor;
-    // Perpendicular component of e2 w.r.t X for isotropy in tangent plane
     glm::vec3 e2_perp = e2 - glm::dot(e2, X) * X;
     float sv = (glm::length(e2_perp) / float(m)) * scaleFactor;
 
-    // --- Make Gaussians isotropic (circular) ---
-    float avg_scale = (su + sv) * 0.5f; // Calculate average scale
-    // Use a small epsilon for scale, avoid zero or negative scales
-    // Use avg_scale for both X and Y components
+    // Make Gaussians isotropic (circular)
+    float avg_scale = (su + sv) * 0.5f;
     glm::vec3 S(avg_scale > 1e-7f ? avg_scale : 1e-7f,
                 avg_scale > 1e-7f ? avg_scale : 1e-7f,
-                1e-7f); // Keep Z scale minimal
+                1e-7f);
 
     for (int u = 0; u <= m; ++u)
     {
@@ -63,15 +58,39 @@ static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
             float fv = float(v) / m;
             float fw = 1.0f - fu - fv;
 
+            // Interpolate position
             glm::vec3 P = fw * p0 + fu * p1 + fv * p2;
+
+            // Interpolate normal
+            glm::vec3 interpolatedNormal = glm::normalize(
+                fw * face.normal[0] + 
+                fu * face.normal[1] + 
+                fv * face.normal[2]
+            );
+
+            // Interpolate UV coordinates
+            glm::vec2 interpolatedUV = 
+                fw * face.uv[0] + 
+                fu * face.uv[1] + 
+                fv * face.uv[2];
+
+            // Interpolate tangent
+            glm::vec4 interpolatedTangent = 
+                fw * face.tangent[0] + 
+                fu * face.tangent[1] + 
+                fv * face.tangent[2];
 
             utils::GaussianDataSSBO g;
             g.position = glm::vec4(P, 1.0f);
-            g.scale = glm::vec4(S, 0.0f); // Use pre-calculated scale S
-            g.normal = glm::vec4(n, 0.0f);
+            g.scale = glm::vec4(S, 0.0f);
+            g.normal = glm::vec4(interpolatedNormal, 0.0f);
             g.rotation = glm::vec4(Q.w, Q.x, Q.y, Q.z);
+            
+            // Default color - could be interpolated from material or vertex colors if available
             g.color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f);
-            g.pbr = glm::vec4(0.0f, 0.5f, 0.0f, 0.0f);
+            
+            // Default PBR values - could be interpolated from material properties
+            g.pbr = glm::vec4(0.0f, 0.5f, 0.0f, 0.0f); // metallic, roughness, etc.
 
             out.push_back(g);
         }
@@ -540,7 +559,7 @@ unsigned int Renderer::getTotalGaussianCount()
 
 }
 
-void Renderer::convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor) // Add scaleFactor
+void Renderer::convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor)
 {
     std::cout << "Starting CPU Mesh to Gaussian Conversion..." << std::endl;
     renderContext.readGaussians.clear();
@@ -562,23 +581,16 @@ void Renderer::convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor)
             const glm::vec3& p1 = face.pos[1];
             const glm::vec3& p2 = face.pos[2];
 
-            // Generate Gaussians for this triangle, passing the scaleFactor
-            std::vector<utils::GaussianDataSSBO> triangleGaussians = sampleTriangleCPU_Internal(p0, p1, p2, samplingDensity, scaleFactor);
+            // Generate Gaussians for this triangle, passing the face data
+            std::vector<utils::GaussianDataSSBO> triangleGaussians = 
+                sampleTriangleCPU_Internal(p0, p1, p2, face, samplingDensity, scaleFactor);
 
             // Add the generated Gaussians to the main list
-            renderContext.readGaussians.insert(renderContext.readGaussians.end(), triangleGaussians.begin(), triangleGaussians.end());
+            renderContext.readGaussians.insert(renderContext.readGaussians.end(), 
+                                             triangleGaussians.begin(), triangleGaussians.end());
         }
     }
 
     std::cout << "CPU Conversion finished. Generated " << renderContext.readGaussians.size() << " gaussians." << std::endl;
-
-    // Update the GPU buffer with the new CPU-generated data
     updateGaussianBuffer();
-
-    // Optionally, trigger necessary render passes if needed immediately after conversion
-    // enableRenderPass(gaussiansPrePassName);
-    // enableRenderPass(radixSortPassName);
-    // enableRenderPass(gaussianSplattingPassName);
-    // enableRenderPass(gaussianSplattingRelightingPassName);
-    // resetRendererViewportResolution();
 }
