@@ -7,10 +7,88 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+// Helper function to sample texture at UV coordinates
+glm::vec4 sampleTextureAtUV(const utils::TextureInfo& textureInfo, const glm::vec2& uv) {
+    if (textureInfo.path == EMPTY_TEXTURE) {
+        // std::cout << "  Texture path is EMPTY_TEXTURE" << std::endl;
+        return glm::vec4(1.0f);
+    }
+    
+    if (textureInfo.texture.empty()) {
+        // std::cout << "  Texture data is empty for: " << textureInfo.path << std::endl;
+        return glm::vec4(1.0f);
+    }
+    
+    // std::cout << "  Sampling texture: " << textureInfo.path 
+    //           << " (" << textureInfo.width << "x" << textureInfo.height 
+    //           << ", " << textureInfo.channels << " channels)" << std::endl;
+    
+    // Convert UV to pixel coordinates
+    int x = static_cast<int>(uv.x * textureInfo.width) % textureInfo.width;
+    int y = static_cast<int>(uv.y * textureInfo.height) % textureInfo.height;
+    
+    // Clamp to texture bounds
+    x = std::max(0, std::min(x, textureInfo.width - 1));
+    y = std::max(0, std::min(y, textureInfo.height - 1));
+    
+    int index = (y * textureInfo.width + x) * textureInfo.channels;
+    
+    if (index + textureInfo.channels <= textureInfo.texture.size()) {
+        if (textureInfo.channels >= 3) {
+            float r = textureInfo.texture[index] / 255.0f;
+            float g = textureInfo.texture[index + 1] / 255.0f;
+            float b = textureInfo.texture[index + 2] / 255.0f;
+            float a = (textureInfo.channels >= 4) ? textureInfo.texture[index + 3] / 255.0f : 1.0f;
+            return glm::vec4(r, g, b, a);
+        }
+    }
+    
+    return glm::vec4(1.0f); // Fallback
+}
+
+// Helper function to compute all material properties at a given UV
+void computeMaterialPropertiesAtUV(const utils::MaterialGltf& material, const glm::vec2& uv, 
+                                   glm::vec4& outColor, glm::vec2& outMetallicRoughness, 
+                                   glm::vec3& outNormal, glm::vec3& outEmissive) {
+    
+    // Base color
+    glm::vec4 baseColor = sampleTextureAtUV(material.baseColorTexture, uv);
+    outColor = baseColor * material.baseColorFactor;
+
+    // Debug output
+    // std::cout << "    Base color factor: " << glm::to_string(material.baseColorFactor) << std::endl;
+    // std::cout << "    Sampled base color: " << glm::to_string(baseColor) << std::endl;
+    // std::cout << "    Final color: " << glm::to_string(outColor) << std::endl;
+    
+    // Metallic-Roughness
+    glm::vec4 metallicRoughnessTexel = sampleTextureAtUV(material.metallicRoughnessTexture, uv);
+    float metallic = metallicRoughnessTexel.b * material.metallicFactor;  // Blue channel
+    float roughness = metallicRoughnessTexel.g * material.roughnessFactor; // Green channel
+    outMetallicRoughness = glm::vec2(metallic, roughness);
+    
+    // Normal map (simplified - you'd want proper tangent space transformation)
+    glm::vec4 normalTexel = sampleTextureAtUV(material.normalTexture, uv);
+    if (material.normalTexture.path != EMPTY_TEXTURE) {
+        // Convert from [0,1] to [-1,1] range
+        outNormal = glm::vec3(
+            normalTexel.r * 2.0f - 1.0f,
+            normalTexel.g * 2.0f - 1.0f,
+            normalTexel.b * 2.0f - 1.0f
+        ) * material.normalScale;
+    } else {
+        outNormal = glm::vec3(0.0f, 0.0f, 1.0f); // Default normal
+    }
+    
+    // Emissive
+    glm::vec4 emissiveTexel = sampleTextureAtUV(material.emissiveTexture, uv);
+    outEmissive = glm::vec3(emissiveTexel) * material.emissiveFactor;
+}
+
 static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
     const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2,
-    const utils::Face& face, // Add face parameter to access all vertex attributes
-    int m /* sampling density */, float scaleFactor /* New parameter */) 
+    const utils::Face& face, 
+    const utils::MaterialGltf& material, // Add material parameter
+    int m, float scaleFactor) 
 {
     std::vector<utils::GaussianDataSSBO> out;
     if (m <= 0) return out;
@@ -61,8 +139,8 @@ static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
             // Interpolate position
             glm::vec3 P = fw * p0 + fu * p1 + fv * p2;
 
-            // Interpolate normal
-            glm::vec3 interpolatedNormal = glm::normalize(
+            // Interpolate vertex normal
+            glm::vec3 interpolatedVertexNormal = glm::normalize(
                 fw * face.normal[0] + 
                 fu * face.normal[1] + 
                 fv * face.normal[2]
@@ -75,22 +153,73 @@ static std::vector<utils::GaussianDataSSBO> sampleTriangleCPU_Internal(
                 fv * face.uv[2];
 
             // Interpolate tangent
-            glm::vec4 interpolatedTangent = 
+            glm::vec4 interpolatedTangent = glm::normalize(
                 fw * face.tangent[0] + 
                 fu * face.tangent[1] + 
-                fv * face.tangent[2];
+                fv * face.tangent[2]
+            );
+
+            // Sample material properties at interpolated UV
+            glm::vec4 materialColor;
+            glm::vec2 metallicRoughness;
+            glm::vec3 normalMapNormal;
+            glm::vec3 emissive;
+            
+            computeMaterialPropertiesAtUV(material, interpolatedUV, 
+                                        materialColor, metallicRoughness, 
+                                        normalMapNormal, emissive);
+
+            // Transform normal map normal to world space using tangent frame
+            // (This is simplified - proper implementation would use full TBN matrix)
+            glm::vec3 finalNormal = interpolatedVertexNormal;
+            if (glm::length(normalMapNormal) > 0.1f) {
+                glm::vec3 tangent = glm::vec3(interpolatedTangent);
+                glm::vec3 bitangent = glm::cross(interpolatedVertexNormal, tangent) * interpolatedTangent.w;
+                glm::mat3 TBN = glm::mat3(tangent, bitangent, interpolatedVertexNormal);
+                finalNormal = glm::normalize(TBN * normalMapNormal);
+            }
+
+            glm::vec3 finalColor = glm::vec3(materialColor);
+            
+            // Apply emissive
+            // finalColor += emissive;
+
+            // Clamp colors to reasonable range
+            finalColor = glm::clamp(finalColor, glm::vec3(0.0f), glm::vec3(1.0f));
+
+            // Convert to SH coefficients (simplified - just using DC component)
+            glm::vec3 sh0 = finalColor;
+
+            // Calculate opacity (could be from alpha channel or material property)
+            float opacity = materialColor.a;
 
             utils::GaussianDataSSBO g;
             g.position = glm::vec4(P, 1.0f);
             g.scale = glm::vec4(S, 0.0f);
-            g.normal = glm::vec4(interpolatedNormal, 0.0f);
+            g.normal = glm::vec4(finalNormal, 0.0f);
             g.rotation = glm::vec4(Q.w, Q.x, Q.y, Q.z);
             
-            // Default color - could be interpolated from material or vertex colors if available
-            g.color = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f);
+            // Pack color as SH coefficients + opacity
+            g.color = glm::vec4(sh0, opacity);
             
-            // Default PBR values - could be interpolated from material properties
-            g.pbr = glm::vec4(0.0f, 0.5f, 0.0f, 0.0f); // metallic, roughness, etc.
+            // Pack PBR properties: metallic, roughness, and potentially other properties
+            g.pbr = glm::vec4(
+                metallicRoughness.x,  // metallic
+                metallicRoughness.y,  // roughness
+                0.0f,                 // could be occlusion strength
+                0.0f                  // could be emissive strength or other property
+            );
+
+            // Debug output for first few gaussians
+            static int debugCount = 0;
+            if (debugCount < 3) {
+                std::cout << "Gaussian " << debugCount << ":" << std::endl;
+                std::cout << "  Material Color: " << glm::to_string(materialColor) << std::endl;
+                std::cout << "  Final Color: " << glm::to_string(finalColor) << std::endl;
+                std::cout << "  Stored Color: " << glm::to_string(g.color) << std::endl;
+                std::cout << "  PBR: " << glm::to_string(g.pbr) << std::endl;
+                debugCount++;
+            }
 
             out.push_back(g);
         }
@@ -569,9 +698,16 @@ void Renderer::convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor)
         const utils::Mesh& mesh = meshPair.first;
 
         if (mesh.faces.empty()) {
-            std::cerr << "Warning: Skipping mesh with no faces." << std::endl;
+            std::cerr << "Warning: Skipping mesh '" << mesh.name << "' with no faces." << std::endl;
             continue;
         }
+
+        std::cout << "Processing mesh: " << mesh.name << " with " << mesh.faces.size() << " faces" << std::endl;
+        std::cout << "  Material name: " << mesh.material.name << std::endl;
+        std::cout << "  Base color factor: " << glm::to_string(mesh.material.baseColorFactor) << std::endl;
+        std::cout << "  Base color texture: " << mesh.material.baseColorTexture.path << std::endl;
+        std::cout << "  Metallic factor: " << mesh.material.metallicFactor << std::endl;
+        std::cout << "  Roughness factor: " << mesh.material.roughnessFactor << std::endl;
 
         // Iterate through each face (triangle) in the mesh
         for (const auto& face : mesh.faces)
@@ -581,9 +717,9 @@ void Renderer::convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor)
             const glm::vec3& p1 = face.pos[1];
             const glm::vec3& p2 = face.pos[2];
 
-            // Generate Gaussians for this triangle, passing the face data
+            // Generate Gaussians for this triangle, passing face and material data
             std::vector<utils::GaussianDataSSBO> triangleGaussians = 
-                sampleTriangleCPU_Internal(p0, p1, p2, face, samplingDensity, scaleFactor);
+                sampleTriangleCPU_Internal(p0, p1, p2, face, mesh.material, samplingDensity, scaleFactor);
 
             // Add the generated Gaussians to the main list
             renderContext.readGaussians.insert(renderContext.readGaussians.end(), 
