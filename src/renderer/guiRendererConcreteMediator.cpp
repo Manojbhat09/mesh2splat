@@ -20,7 +20,7 @@ void GuiRendererConcreteMediator::notify(EventType event)
             renderer.enableRenderPass(gaussianSplattingPassName);
 
             // add cpu version
-            renderer.convertMeshToGaussiansCPU(16, imguiUI.getGaussianStd() * 1000);
+            renderer.convertMeshToGaussiansCPU(imguiUI.getCpuSamplingDensity(), imguiUI.getGaussianStd() * 1000);
 
             imguiUI.setLoadNewMesh(false);
             imguiUI.setMeshLoaded(true);
