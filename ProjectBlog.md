@@ -34,7 +34,7 @@ We later experimented on other models such as Blenders Sussan model. When compar
 
 This might look like a long step in time, and you are right! We had a lot to do in other courses, so we had to prioritize those projects instead. We did work on the report in the meantime and on the side discussed possible solutions to our project. We discussed which way we wanted to go with the project and how much we wanted to do on it (it was around this time we decided to only do the CPU version of the implementation).
 
-## *2025 June 3rd* - Interpolate materials and other problems
+## *2025 June 3* - Interpolate materials and other problems
 We finalized the project around this time, we added interpolation of materials. We also tried out solutions for merging the overlapping gaussians for future work, but it would take the CPU too much time to find and merge all the gaussians for any complicated models with a large amount of triangles (O(N^2) time complexity). 
 
 
