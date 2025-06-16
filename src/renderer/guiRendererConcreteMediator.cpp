@@ -14,10 +14,13 @@ void GuiRendererConcreteMediator::notify(EventType event)
             renderer.gaussianBufferFromSize(imguiUI.getResolutionTarget() * imguiUI.getResolutionTarget());
             renderer.setFormatType(0); //TODO: use an enum
             renderer.setViewportResolutionForConversion(imguiUI.getResolutionTarget());
-            renderer.enableRenderPass(conversionPassName);
+            // renderer.enableRenderPass(conversionPassName);
             renderer.enableRenderPass(gaussiansPrePassName);
             renderer.enableRenderPass(radixSortPassName);
             renderer.enableRenderPass(gaussianSplattingPassName);
+
+            // add cpu version
+            renderer.convertMeshToGaussiansCPU(imguiUI.getCpuSamplingDensity(), imguiUI.getGaussianStd() * 1000);
 
             imguiUI.setLoadNewMesh(false);
             imguiUI.setMeshLoaded(true);
@@ -47,8 +50,9 @@ void GuiRendererConcreteMediator::notify(EventType event)
             break;
         }
         case EventType::RunConversion: {
-            renderer.enableRenderPass(conversionPassName);
-            renderer.setViewportResolutionForConversion(imguiUI.getResolutionTarget());
+            // renderer.enableRenderPass(conversionPassName);
+            // renderer.setViewportResolutionForConversion(imguiUI.getResolutionTarget());
+
             imguiUI.setRunConversion(false);
             
             break;

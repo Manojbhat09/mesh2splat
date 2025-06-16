@@ -65,7 +65,9 @@ public:
     
     void setEnableDepthTest(bool depthTest);
     bool getIsDepthTestEnabled() const;
-
+    
+    int getCpuSamplingDensity() const;
+    void setCpuSamplingDensity(int density);
 
     enum class VisualizationOption
     {
@@ -103,6 +105,7 @@ private:
     float gaussian_std;
     float lightIntensity = 0;
     float quality;
+    int cpuSamplingDensity;
     bool runConversionFlag = false;
     bool loadNewMesh = false;
     bool loadNewPly = false;

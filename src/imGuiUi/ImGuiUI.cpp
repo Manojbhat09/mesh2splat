@@ -15,7 +15,8 @@ ImGuiUI::ImGuiUI(float defaultGaussianStd, float defaultMesh2SPlatQuality)
       savePly(false),
       hasMeshBeenLoaded(false),
       loadNewPly(false),
-      hasPlyBeenLoaded(false)
+      hasPlyBeenLoaded(false),
+      cpuSamplingDensity(8)
 {}
 
 ImGuiUI::~ImGuiUI()
@@ -164,6 +165,9 @@ void ImGuiUI::renderPropertiesWindow()
     ImGui::SeparatorText("Sampling density settings");
 
     if (ImGui::SliderFloat("Sampling density", &quality, 0.0f, 1.0f, "%.2f")) {
+        runConversionFlag = true;
+    }
+    if (ImGui::SliderInt("CPU Sampling Density", &cpuSamplingDensity, 2, 32, "%d")) {
         runConversionFlag = true;
     }
     if (ImGui::Combo("(Max quality tweak)", &resolutionIndex, resolutionLabels, IM_ARRAYSIZE(resolutionLabels)))
@@ -373,7 +377,10 @@ std::string ImGuiUI::getPlyFilePathParentFolder() const { return plyParentFolder
 unsigned int ImGuiUI::getFormatOption() const { return formatOptions[formatIndex]; };
 glm::vec4 ImGuiUI::getSceneBackgroundColor() const { return sceneBackgroundColor; };
 float ImGuiUI::getGaussianStd() const { return gaussian_std; };
-int ImGuiUI::getResolutionTarget() const { return static_cast<int>(minRes + quality * (maxRes - minRes)); };
+int ImGuiUI::getResolutionTarget() const { 
+    std::cout << "Resolution: " << static_cast<int>(minRes + quality * (maxRes - minRes)) << std::endl;
+    return static_cast<int>(minRes + quality * (maxRes - minRes)); 
+};
 
 //renderModeSelector
 ImGuiUI::VisualizationOption ImGuiUI::selectedRenderMode() const { return renderOptions[renderIndex]; };
@@ -406,3 +413,6 @@ glm::vec3 ImGuiUI::getLightColor() const { return lightColor; };
 
 void ImGuiUI::setEnableDepthTest(bool depthTest) { enableDepthTest = depthTest; }
 bool ImGuiUI::getIsDepthTestEnabled() const { return enableDepthTest; }
+
+int ImGuiUI::getCpuSamplingDensity() const { return cpuSamplingDensity; }
+void ImGuiUI::setCpuSamplingDensity(int density) { cpuSamplingDensity = density; }

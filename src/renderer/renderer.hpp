@@ -56,6 +56,8 @@ public:
 	bool hasWindowSizeChanged();
 	bool isWindowMinimized();
 
+	void convertMeshToGaussiansCPU(int samplingDensity, float scaleFactor);
+
 
 private:
 	std::map<std::string, std::unique_ptr<IRenderPass>> renderPasses;

@@ -25,8 +25,8 @@ bool SceneManager::loadModel(const std::string& filePath, const std::string& par
 
     //generateNormalizedUvCoordinates(meshes);
     setupMeshBuffers(meshes);
-    loadTextures(meshes);
-    glUtils::generateTextures(renderContext.meshToTextureData);
+    // loadTextures(meshes);
+    // glUtils::generateTextures(renderContext.meshToTextureData);
 
     return true;
 }
