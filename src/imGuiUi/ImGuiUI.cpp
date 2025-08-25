@@ -3,7 +3,7 @@
 //        Copyright (c) 2025 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ImGuiUI.hpp"
+#include "ImGuiUi.hpp"
 
 ImGuiUI::ImGuiUI(float defaultGaussianStd, float defaultMesh2SPlatQuality)
     : resolutionIndex(0),

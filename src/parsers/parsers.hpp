@@ -9,7 +9,7 @@
 #include "stb_image_resize.h"
 #include "stb_image_write.h"
 #include "happly.h"
-#include "utils/utils.hpp"
+#include "utils/utils_simplified.hpp"
 
 namespace parsers
 {
