@@ -192,13 +192,59 @@ public:
                         gaussian.color = color;
                         gaussian.pbr = pbr;
                         
-                        // Set scale based on sampling density and mesh bounds
-                        float baseScale = 0.01f; // Base scale for gaussians
-                        float scaleFactor = 1.0f / sampling_density;
-                        gaussian.scale = glm::vec4(baseScale * scaleFactor, baseScale * scaleFactor, baseScale * scaleFactor, 1.0f);
+                        // Calculate proper scale based on mesh density and local geometry
+                        float localScale = 0.0f;
                         
-                        // Set rotation (identity quaternion)
-                        gaussian.rotation = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+                        // Use triangle area or vertex density for scale
+                        if (vertexIndex < normals.size()) {
+                            // Scale based on normal magnitude and sampling density
+                            float normalMag = glm::length(glm::vec3(normals[vertexIndex]));
+                            localScale = normalMag * 0.1f; // Base scale from normal
+                        }
+                        
+                        // Apply sampling density scaling
+                        if (sampling_density > 1.0f) {
+                            localScale *= (1.0f / sampling_density);
+                        }
+                        
+                        // Ensure minimum scale for visibility
+                        localScale = std::max(localScale, 0.05f);
+                        
+                        // Apply user scale multiplier
+                        localScale *= scale_multiplier_;
+                        
+                        // Set anisotropic scale (different in normal direction)
+                        glm::vec3 normalVec = glm::vec3(gaussian.normal);
+                        glm::vec3 tangent1 = glm::normalize(glm::cross(normalVec, glm::vec3(1.0f, 0.0f, 0.0f)));
+                        if (glm::length(tangent1) < 0.1f) {
+                            tangent1 = glm::normalize(glm::cross(normalVec, glm::vec3(0.0f, 1.0f, 0.0f)));
+                        }
+                        glm::vec3 tangent2 = glm::normalize(glm::cross(normalVec, tangent1));
+                        
+                        // Scale in tangent directions (surface-aligned)
+                        float tangentScale = localScale * 0.8f;
+                        float normalScale = localScale * 1.2f; // Slightly larger in normal direction
+                        
+                        gaussian.scale = glm::vec4(tangentScale, tangentScale, normalScale, 1.0f);
+                        
+                        // Set rotation to align with surface normal
+                        // Convert normal to quaternion rotation
+                        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+                        glm::vec3 normal = glm::normalize(glm::vec3(gaussian.normal));
+                        
+                        if (glm::abs(glm::dot(normal, up)) < 0.99f) {
+                            glm::vec3 axis = glm::normalize(glm::cross(up, normal));
+                            float angle = glm::acos(glm::dot(up, normal));
+                            gaussian.rotation = glm::vec4(
+                                glm::cos(angle * 0.5f),
+                                axis.x * glm::sin(angle * 0.5f),
+                                axis.y * glm::sin(angle * 0.5f),
+                                axis.z * glm::sin(angle * 0.5f)
+                            );
+                        } else {
+                            // Normal is close to up vector, use identity
+                            gaussian.rotation = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+                        }
                         
                         gaussians_.push_back(gaussian);
                     }
@@ -206,6 +252,14 @@ public:
             }
             
             py::print("Successfully converted GLB to ", gaussians_.size(), " gaussians");
+            
+            // Debug: Show scale and rotation info
+            if (!gaussians_.empty()) {
+                const auto& firstGaussian = gaussians_[0];
+                py::print("First gaussian scale: ", firstGaussian.scale.x, ", ", firstGaussian.scale.y, ", ", firstGaussian.scale.z);
+                py::print("First gaussian rotation: ", firstGaussian.rotation.w, ", ", firstGaussian.rotation.x, ", ", firstGaussian.rotation.y, ", ", firstGaussian.rotation.z);
+                py::print("First gaussian normal: ", firstGaussian.normal.x, ", ", firstGaussian.normal.y, ", ", firstGaussian.normal.z);
+            }
             
             // Debug: Show material information
             if (!model.materials.empty()) {
